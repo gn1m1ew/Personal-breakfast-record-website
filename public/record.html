@@ -1,0 +1,289 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Final project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@200&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" media="screen">
+    <!--<script src="index.js" charset="utf-8" defer></script>-->
+    <script src="handlebars-v4.0.11.js"></script>
+    <style>
+
+
+        .modalWindow {
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 999;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            background-color: rgba(255, 0, 0, 0.25);
+            top: 0;
+            transition: all 0.8s;
+        }
+
+            .modalWindow:target {
+                pointer-events: auto;
+                visibility: visible;
+                opacity: 1;
+            }
+
+            .modalWindow > div {
+                width: 400px;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                -webkit-transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%);
+                padding: 2em;
+                background: #ffffff;
+            }
+
+            .modalWindow header {
+                font-weight: bold;
+            }
+
+            .modalWindow h1 {
+                font-size: 150%;
+                margin: 0 0 15px;
+            }
+
+        .modalClose {
+            font-size: 80%;
+            position: absolute;
+            right: 0;
+            text-align: center;
+            color: #aaa;
+            line-height: 50px;
+            top: 0;
+            width: 70px;
+            text-decoration: none;
+        }
+
+            .modalClose:hover {
+                color: orangered;
+            }
+
+        #open-modal label {
+            display: inline-block;
+            width: 180px;
+        }
+
+        .btnSub {
+            float: right;
+        }
+
+        .navlink {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 class="site-title">MY DAILY BREAKFAST RECORD</h1>
+        <nav class="navbar">
+            <ul class="navlist">
+                <li class="navitem navlink"><a href="/home">HOME</a></li>
+                <li class="navitem navlink"><a href="/record">RECORD</a></li>
+                <li class="navitem navlink"><a href="/about">ABOUT</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main class="record-page" id="content">
+
+    </main>
+    <nav class="navbar">
+        <ul class="navlist">
+            <li class="navitem navlink"><a href="/home">BACK</a></li>
+            <li class="navitem navlink" onclick="add()">CREAT</li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="interior">
+            <a class="btn" href="#open-modal" id="openBtn"></a>
+        </div>
+    </div>
+    <div id="open-modal" class="modalWindow">
+        <div>
+            <a href="#" title="Close" class="modalClose" id="close">Close</a>
+            <h1 id="type">Add</h1>
+            <input type="hidden" id="myid" value="" />
+            <div>
+                <label>Img:</label>
+                <img class="photo photo-img" width="100" id="myImg" src="">
+                <form id="img_form" action="" method="POST" enctype="multipart/form-data">
+                    <input name="img" type="file" id="img-input" onchange="change()" style="display: block" />
+                </form>
+            </div>
+            <br />  <br />
+            <div style="height:30px;">
+                <label>Name:</label><input type="text" id="name" value="" />
+            </div>
+            <br />
+            <div>
+                <label>Date:</label><input type="date" id="date" value="" />
+            </div>
+            <input type="button" class="btnSub" onclick="sub()" value="Submit" />
+        </div>
+    </div>
+
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="jquery.form.js"></script>
+    <script id="my-template" type="text/x-handlebars-template">
+        {{#each this}}
+        <section class="record">
+            <div class="img-container">
+                <img class="breakfast-photo-img" src="{{url}}" />
+            </div>
+            <div class="caption">
+                {{name}}
+            </div>
+            <div class="time">
+                {{date}}
+            </div>
+            <div>
+                <input type="button" src="{{url}}" data-id="{{id}}" name=" {{name}}" date=" {{date}}" onclick="upde(this)" value="update" />
+                <input type="button" onclick="del({{id}})" value="delete" />
+            </div>
+        </section>
+        {{/each}}
+    </script>
+
+    <script>
+        var type = "add";
+        var flag = false;
+        function add() {
+            document.getElementById("openBtn").click();
+            document.getElementById("name").value = "";
+            document.getElementById("date").value = "";
+            document.getElementById("myImg").src = "";
+            type = "add";
+        }
+
+
+
+        function upde(e) {
+            document.getElementById("openBtn").click();
+            var id = e.getAttribute("data-id");
+            var name = e.getAttribute("name");
+            var date = e.getAttribute("date");
+            var src = e.getAttribute("src");
+            document.getElementById("myid").value = id;
+            document.getElementById("name").value = name;
+            document.getElementById("date").value = date;
+            document.getElementById("myImg").src = src;
+            type = "update";
+        }
+
+        function sub() {
+            if (type == "update") {
+                var id = document.getElementById("myid").value;
+                var name = document.getElementById("name").value;
+                var date = document.getElementById("date").value;
+                var img = document.getElementById("myImg").src;
+                if (id == "" || name == "" || date == "" || img == "") {
+                    alert("Fill in the blanks in the submission");
+                    return;
+                }
+                var obj = {
+                    id: parseInt(id),
+                    name: name,
+                    date: date,
+                    url: img
+                };
+                $.ajax({
+                    url: '/update',
+                    type: 'post',
+                    data: { data: JSON.stringify(obj) },
+                    success: function (data) {
+                        loadData();
+                        document.getElementById("close").click();
+                        alert(data);
+                    },
+                });
+            } else {
+                var id = 0;
+                var name = document.getElementById("name").value;
+                var date = document.getElementById("date").value;
+                var img = document.getElementById("myImg").src;
+
+                var obj = {
+                    id: parseInt(id),
+                    name: name,
+                    date: date,
+                    url: img
+                };
+                $.ajax({
+                    url: '/add',
+                    type: 'post',
+                    data: { data: JSON.stringify(obj) },
+                    success: function (data) {
+                        loadData();
+                        document.getElementById("close").click();
+                        alert(data);
+                    },
+                });
+            }
+        }
+
+        function del(id) {
+            if (confirm("Sure to delete?")) {
+                $.ajax({
+                    url: '/del',
+                    type: 'post',
+                    data: { id: id },
+                    success: function (data) {
+                        alert(data);
+                        loadData();
+                    },
+                });
+            }
+        }
+
+        function loadData() {
+            $.ajax({
+                url: '/search',
+                type: 'get',
+                dataType: 'json',
+                contentType: "application/json",
+                success: function (data) {
+                    console.log(data);
+                    var t = $("#my-template").html();
+                    var c = Handlebars.compile(t);
+                    var h = c(JSON.parse(data));
+                    document.getElementById("content").innerHTML = h;
+                },
+            });
+        }
+        loadData();
+
+
+
+        function change() {
+            var form = $("#img_form");
+            var options = {
+                url:  'uploads/img', 
+                type: 'post',
+                success: function (data) {
+                    data = JSON.parse(data);
+                    flag = true;
+                    if (data.code == 0) {
+                        var url = data.data.url.replace("public\\", "");
+                        document.getElementById("myImg").src = url;
+                    } else {
+                        alert('fail to upload photo！');
+                    }
+                }
+            };
+            form.ajaxSubmit(options);
+        }
+
+
+    </script>
+
+</body>
+</html>
